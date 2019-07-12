@@ -185,6 +185,24 @@ def test_read_csv_buglet_4x_multi_index2(python_parser_only):
     tm.assert_frame_equal(result, expected)
 
 
+def test_read_csv_skip_blank_trailing_lines(python_parser_only):
+    """Tests if skip_blank_lines=True removes empty lines after data."""
+    parser = python_parser_only
+    data = """A,B,C
+1,2,3
+4,5,6
+7,8,9
+,,
+,,
+,,
+"""
+    result = parser.read_csv(StringIO(data), sep=",", skip_blank_lines=True)
+    expected = DataFrame([[1, 2, 3], [4, 5, 6], [7, 8, 9]], columns=["A", "B", "C"])
+    print(result)
+    print(expected)
+    tm.assert_frame_equal(result, expected)
+
+
 @pytest.mark.parametrize("add_footer", [True, False])
 def test_skipfooter_with_decimal(python_parser_only, add_footer):
     # see gh-6971

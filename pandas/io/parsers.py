@@ -5,7 +5,7 @@ Module contains tools for processing files into DataFrames or other objects
 from collections import defaultdict
 import csv
 import datetime
-from io import StringIO
+# from io import StringIO
 import re
 import sys
 from textwrap import fill
@@ -13,7 +13,8 @@ from typing import Any, Dict, Set
 import warnings
 
 import numpy as np
-
+# from pandas import compat
+# from pandas.compat import string_types
 import pandas._libs.lib as lib
 import pandas._libs.ops as libops
 import pandas._libs.parsers as parsers
@@ -966,6 +967,10 @@ class TextFileReader(BaseIterator):
         if engine == "c":
             if options["skipfooter"] > 0:
                 fallback_reason = "the 'c' engine does not support" " skipfooter"
+                engine = "python"
+            elif options["skip_blank_lines"]:
+                fallback_reason = ("the 'c' engine does not support"
+                                   " skip_blank_lines=True")
                 engine = "python"
 
         encoding = sys.getfilesystemencoding() or "utf-8"
@@ -2995,15 +3000,21 @@ class PythonParser(ParserBase):
         filtered_lines : array-like
             The same array of lines with the "empty" ones removed.
         """
-
         ret = []
         for l in lines:
-            # Remove empty lines and lines with only one whitespace value
-            if (
-                len(l) > 1
-                or len(l) == 1
-                and (not isinstance(l[0], str) or l[0].strip())
-            ):
+            # Remove blank lines if they're not headers of the
+            # form ['', '', ... ]
+            if not self.line_pos == 0\
+                    and ''.join([str(x) for x in l]).strip() != '':
+                ret.append(l)
+            # Remove header lines that are empty or with only one
+            # whitespace value
+            elif self.line_pos == 0 \
+                    and (
+                        len(l) > 1 or len(l) == 1
+                        and (not isinstance(l[0],
+                             str) or l[0].strip())
+                    ):
                 ret.append(l)
         return ret
 

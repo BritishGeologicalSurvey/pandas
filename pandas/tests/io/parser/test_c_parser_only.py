@@ -35,6 +35,21 @@ def test_buffer_overflow(c_parser_only, malformed):
         parser.read_csv(StringIO(malformed))
 
 
+def test_read_csv_skip_blank_trailing_lines(c_parser_only):
+    """Tests if skip_blank_lines=True removes empty lines after data."""
+    parser = c_parser_only
+    data = """A,B,C
+1,2,3
+4,5,6
+7,8,9
+,,
+,,
+,,
+"""
+    with pytest.raises(ValueError, match="engine does not support skip_blank_lines"):
+        parser.read_csv(StringIO(data), sep=",")
+
+
 def test_buffer_rd_bytes(c_parser_only):
     # see gh-12098: src->buffer in the C parser can be freed twice leading
     # to a segfault if a corrupt gzip file is read with 'read_csv', and the
